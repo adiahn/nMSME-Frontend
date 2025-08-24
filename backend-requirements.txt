@@ -1,0 +1,577 @@
+nMSME AWARDS PORTAL - BACKEND REQUIREMENTS DOCUMENT
+================================================================
+
+1. SYSTEM OVERVIEW
+==================
+The nMSME Awards Portal backend will support a comprehensive awards management system
+for nano, micro, and small enterprises in Katsina. The system handles user registration,
+application submission, judging, and results management.
+
+2. USER ROLES & PERMISSIONS
+============================
+2.1 Applicant
+- Register/login via email/SMS OTP
+- Complete profile and submit applications
+- Track application status
+- View results (when announced)
+
+2.2 Reviewer/Judge
+- View assigned applications (anonymized in first round)
+- Score applications based on rubric
+- Declare conflict of interest
+- Access judging dashboard
+
+2.3 Admin/Secretariat
+- Manage users, categories, timelines, and rubrics
+- Conduct pre-screening and verification
+- Assign judges and generate shortlists
+- Control application timeline phases
+- Manage system settings
+
+2.4 Sponsor/Partner (Optional)
+- Access analytics dashboards
+- View media exposure metrics
+
+2.5 Public Viewer
+- Browse winners' profiles
+- Watch pitch videos of finalists
+
+3. MONGODB ATLAS DATABASE SCHEMA
+================================
+3.1 Users Collection
+-------------------
+users {
+    _id: ObjectId
+    first_name: String (required)
+    last_name: String (required)
+    email: String (required, unique, index)
+    phone: String (required, unique, index)
+    password_hash: String (required)
+    gender: String (enum: ['male', 'female', 'other'])
+    age_band: String (enum: ['18-25', '26-35', '36-45', '46-55', '55+'])
+    role: String (enum: ['applicant', 'judge', 'admin', 'sponsor', 'public'], default: 'applicant')
+    is_verified: Boolean (default: false)
+    is_active: Boolean (default: true)
+    created_at: Date (default: Date.now)
+    updated_at: Date (default: Date.now)
+}
+
+3.2 Business Profiles Collection
+-------------------------------
+business_profiles {
+    _id: ObjectId
+    user_id: ObjectId (ref: 'users', required, index)
+    business_name: String (required)
+    cac_number: String (required, unique, index)
+    sector: String (enum: ['fashion', 'it', 'agribusiness', 'food_beverage', 'light_manufacturing', 'creative_enterprise', 'nano_category', 'emerging_enterprise'], required)
+    msme_category: String (enum: ['nano', 'micro', 'small', 'medium'], required)
+    state: String (required)
+    lga: String (required)
+    start_year: Number (required)
+    employee_count: Number (required)
+    revenue_band: String (enum: ['under-100k', '100k-500k', '500k-1m', '1m-5m', '5m-10m', '10m+'], required)
+    website: String
+    social_media_links: String
+    created_at: Date (default: Date.now)
+    updated_at: Date (default: Date.now)
+}
+
+3.3 Applications Collection
+--------------------------
+applications {
+    _id: ObjectId
+    user_id: ObjectId (ref: 'users', required, index)
+    business_profile_id: ObjectId (ref: 'business_profiles', required, index)
+    category: String (enum: ['fashion', 'it', 'agribusiness', 'food_beverage', 'light_manufacturing', 'creative_enterprise', 'nano_category', 'emerging_enterprise'], required)
+    status: String (enum: ['draft', 'submitted', 'under_review', 'shortlisted', 'approved', 'rejected'], default: 'draft', index)
+    business_description: String (required, max: 2500)
+    key_achievements: String (required, max: 1500)
+    products_services: String
+    market_reach: String (enum: ['local', 'regional', 'national', 'international'])
+    jobs_created: Number (required)
+    women_youth_percentage: Number (min: 0, max: 100)
+    sustainability_initiatives: String
+    export_activity: String
+    award_funds_usage: String (required)
+    video_link: String
+    documents: [{
+        document_type: String (enum: ['cac_document', 'tax_id', 'product_photo', 'pitch_video'])
+        file_name: String
+        file_path: String
+        file_size: Number
+        mime_type: String
+        uploaded_at: Date
+    }]
+    submitted_at: Date
+    created_at: Date (default: Date.now)
+    updated_at: Date (default: Date.now)
+}
+
+3.4 Judges Collection
+--------------------
+judges {
+    _id: ObjectId
+    user_id: ObjectId (ref: 'users', required, unique, index)
+    expertise_sectors: [String] (required)
+    is_active: Boolean (default: true)
+    assigned_applications_count: Number (default: 0)
+    created_at: Date (default: Date.now)
+    updated_at: Date (default: Date.now)
+}
+
+3.5 Application Assignments Collection
+------------------------------------
+application_assignments {
+    _id: ObjectId
+    application_id: ObjectId (ref: 'applications', required, index)
+    judge_id: ObjectId (ref: 'judges', required, index)
+    assigned_at: Date (default: Date.now)
+    reviewed_at: Date
+    conflict_declared: Boolean (default: false)
+    conflict_reason: String
+}
+
+3.6 Scores Collection
+--------------------
+scores {
+    _id: ObjectId
+    application_id: ObjectId (ref: 'applications', required, index)
+    judge_id: ObjectId (ref: 'judges', required, index)
+    innovation_differentiation: Number (min: 1, max: 20, required)
+    market_traction_growth: Number (min: 1, max: 20, required)
+    impact_job_creation: Number (min: 1, max: 25, required)
+    financial_health_governance: Number (min: 1, max: 15, required)
+    inclusion_sustainability: Number (min: 1, max: 10, required)
+    scalability_award_use: Number (min: 1, max: 10, required)
+    total_score: Number (min: 1, max: 100, required)
+    comments: String
+    scored_at: Date (default: Date.now)
+    created_at: Date (default: Date.now)
+    updated_at: Date (default: Date.now)
+}
+
+3.7 Application Timeline Collection
+---------------------------------
+application_timeline {
+    _id: ObjectId
+    phase: String (enum: ['registration', 'submission', 'review', 'shortlisting', 'final_judging', 'results'], required)
+    is_active: Boolean (default: false)
+    start_date: Date (required)
+    end_date: Date (required)
+    description: String
+    created_at: Date (default: Date.now)
+    updated_at: Date (default: Date.now)
+}
+
+3.8 System Settings Collection
+-----------------------------
+system_settings {
+    _id: ObjectId
+    key: String (required, unique, index)
+    value: String (required)
+    description: String
+    updated_at: Date (default: Date.now)
+}
+
+3.9 Notifications Collection
+---------------------------
+notifications {
+    _id: ObjectId
+    user_id: ObjectId (ref: 'users', required, index)
+    type: String (enum: ['application_submitted', 'application_reviewed', 'shortlisted', 'results_announced', 'system_update'], required)
+    title: String (required)
+    message: String (required)
+    is_read: Boolean (default: false)
+    created_at: Date (default: Date.now)
+}
+
+3.10 Database Indexes
+--------------------
+Required indexes for optimal performance:
+- users: email, phone, role
+- business_profiles: user_id, cac_number, sector
+- applications: user_id, business_profile_id, status, category, created_at
+- judges: user_id, expertise_sectors
+- application_assignments: application_id, judge_id
+- scores: application_id, judge_id, total_score
+- notifications: user_id, is_read, created_at
+- system_settings: key
+
+4. API ENDPOINTS
+================
+4.1 Authentication Endpoints
+---------------------------
+POST /api/auth/register
+- Register new user with email/phone verification
+- Request: { first_name, last_name, email, phone, password }
+- Response: { success, message, user_id }
+
+POST /api/auth/login
+- Login with email/phone and password
+- Request: { email/phone, password }
+- Response: { success, token, user }
+
+POST /api/auth/verify-otp
+- Verify OTP for registration/login
+- Request: { email/phone, otp }
+- Response: { success, token, user }
+
+POST /api/auth/forgot-password
+- Send password reset email/SMS
+- Request: { email/phone }
+- Response: { success, message }
+
+POST /api/auth/reset-password
+- Reset password with token
+- Request: { token, new_password }
+- Response: { success, message }
+
+POST /api/auth/logout
+- Logout user
+- Request: { token }
+- Response: { success, message }
+
+4.2 User Profile Endpoints
+-------------------------
+GET /api/user/profile
+- Get current user profile
+- Response: { user, business_profile }
+
+PUT /api/user/profile
+- Update user profile
+- Request: { first_name, last_name, phone, gender, age_band }
+- Response: { success, user }
+
+POST /api/user/business-profile
+- Create/update business profile
+- Request: { business_name, cac_number, sector, msme_category, state, lga, start_year, employee_count, revenue_band, website, social_media_links }
+- Response: { success, business_profile }
+
+4.3 Application Endpoints
+------------------------
+GET /api/applications
+- Get user's applications
+- Response: { applications: [{ id, category, status, submitted_at, score }] }
+
+GET /api/applications/:id
+- Get specific application details
+- Response: { application, documents, scores }
+
+POST /api/applications
+- Create new application
+- Request: { category, business_description, key_achievements, products_services, market_reach, jobs_created, women_youth_percentage, sustainability_initiatives, export_activity, award_funds_usage, video_link }
+- Response: { success, application_id }
+
+PUT /api/applications/:id
+- Update application
+- Request: { same fields as POST }
+- Response: { success, application }
+
+POST /api/applications/:id/submit
+- Submit application for review
+- Response: { success, message }
+
+DELETE /api/applications/:id
+- Delete application (only if draft)
+- Response: { success, message }
+
+4.4 Document Upload Endpoints
+----------------------------
+POST /api/applications/:id/documents
+- Upload application documents
+- Request: FormData with files
+- Response: { success, documents: [{ id, file_name, file_path }] }
+
+DELETE /api/documents/:id
+- Delete uploaded document
+- Response: { success, message }
+
+4.5 Dashboard Endpoints
+----------------------
+GET /api/dashboard/home
+- Get dashboard home data
+- Response: { user, application_status, timeline, applications }
+
+GET /api/dashboard/application-status
+- Get current application timeline status
+- Response: { is_open, is_under_review, is_results_announced, deadline, review_start_date, results_date }
+
+4.6 Judge Endpoints (Protected)
+------------------------------
+GET /api/judge/applications
+- Get assigned applications for judging
+- Response: { applications: [{ id, category, business_description, documents, is_anonymous }] }
+
+GET /api/judge/applications/:id
+- Get specific application for judging
+- Response: { application, documents, previous_scores }
+
+POST /api/judge/applications/:id/score
+- Submit application score
+- Request: { innovation_differentiation, market_traction_growth, impact_job_creation, financial_health_governance, inclusion_sustainability, scalability_award_use, comments }
+- Response: { success, score }
+
+POST /api/judge/applications/:id/conflict
+- Declare conflict of interest
+- Request: { conflict_reason }
+- Response: { success, message }
+
+4.7 Admin Endpoints (Protected)
+------------------------------
+GET /api/admin/dashboard
+- Get admin dashboard statistics
+- Response: { total_applications, applications_by_status, applications_by_sector, judges_stats }
+
+GET /api/admin/applications
+- Get all applications with filters
+- Query params: { status, sector, date_from, date_to, page, limit }
+- Response: { applications, pagination }
+
+PUT /api/admin/applications/:id/status
+- Update application status
+- Request: { status, reason }
+- Response: { success, message }
+
+GET /api/admin/judges
+- Get all judges
+- Response: { judges: [{ id, user, expertise_sectors, assigned_count }] }
+
+POST /api/admin/judges/:id/assign
+- Assign applications to judge
+- Request: { application_ids: [UUID] }
+- Response: { success, assigned_count }
+
+PUT /api/admin/timeline
+- Update application timeline
+- Request: { phase, is_active, start_date, end_date, description }
+- Response: { success, timeline }
+
+GET /api/admin/scores
+- Get all application scores
+- Response: { scores: [{ application, judge, scores, total }] }
+
+POST /api/admin/shortlist
+- Generate shortlist based on scores
+- Request: { category, limit }
+- Response: { success, shortlisted_applications }
+
+4.8 Public Endpoints
+-------------------
+GET /api/public/categories
+- Get award categories
+- Response: { categories: [{ id, name, description, prize }] }
+
+GET /api/public/winners
+- Get announced winners
+- Response: { winners: [{ category, business_name, description, video_link }] }
+
+GET /api/public/timeline
+- Get public timeline
+- Response: { timeline: [{ phase, start_date, end_date, description }] }
+
+5. FILE STORAGE REQUIREMENTS
+============================
+5.1 Document Storage
+- CAC registration documents (PDF, JPEG, PNG)
+- Tax identification documents (PDF, JPEG, PNG)
+- Product/service photos (JPEG, PNG) - max 5 per application
+- Pitch videos (MP4, AVI, MOV) - max 200MB per video
+
+5.2 Storage Structure
+/uploads/
+  /applications/
+    /{application_id}/
+      /cac_documents/
+      /tax_documents/
+      /product_photos/
+      /pitch_videos/
+
+5.3 File Validation
+- File type validation
+- File size limits
+- Virus scanning
+- Image optimization for photos
+
+6. SECURITY REQUIREMENTS
+========================
+6.1 Authentication & Authorization
+- JWT token-based authentication
+- Role-based access control (RBAC)
+- Token refresh mechanism
+- Session management
+
+6.2 Data Protection
+- Password hashing (bcrypt)
+- Data encryption at rest
+- HTTPS/TLS encryption
+- Input validation and sanitization
+- SQL injection prevention
+- XSS protection
+
+6.3 File Security
+- Secure file upload validation
+- Virus scanning for uploaded files
+- Access control for file downloads
+- Secure file storage paths
+
+7. PERFORMANCE REQUIREMENTS
+===========================
+7.1 Response Times
+- API endpoints: < 500ms average
+- File uploads: < 30 seconds for 200MB
+- Database queries: < 100ms average
+
+7.2 Scalability
+- Support 1000+ concurrent users
+- Handle 100+ simultaneous file uploads
+- Database connection pooling
+- Caching for frequently accessed data
+
+7.3 Monitoring
+- Application performance monitoring
+- Error tracking and logging
+- Database performance monitoring
+- File storage monitoring
+
+8. INTEGRATION REQUIREMENTS
+===========================
+8.1 Email Service
+- User registration verification
+- Password reset emails
+- Application status notifications
+- Results announcements
+
+8.2 SMS Service
+- OTP verification
+- Application status updates
+- Results notifications
+
+8.3 Payment Integration (Future)
+- Award prize distribution
+- Application fees (if required)
+
+9. DEPLOYMENT REQUIREMENTS
+==========================
+9.1 Environment
+- Node.js/Python/Java backend
+- MongoDB Atlas (Cloud Database)
+- Redis for caching (optional, can use MongoDB for caching)
+- File storage (AWS S3/Google Cloud Storage)
+- Load balancer
+- CDN for file delivery
+
+9.2 MongoDB Atlas Configuration
+- Cluster tier: M10 or higher for production
+- Database access: Username/password authentication
+- Network access: IP whitelist or VPC peering
+- Backup: Automated daily backups (included)
+- Monitoring: Atlas monitoring and alerting
+- Data encryption: At rest and in transit
+- Connection pooling: Configured for optimal performance
+
+9.3 DevOps
+- Docker containerization
+- CI/CD pipeline
+- Environment configuration management
+- Backup and recovery procedures (leveraging Atlas backups)
+- Monitoring and alerting (Atlas + application monitoring)
+
+10. TESTING REQUIREMENTS
+========================
+10.1 Unit Testing
+- API endpoint testing
+- Database operation testing
+- File upload/download testing
+- Authentication testing
+
+10.2 Integration Testing
+- End-to-end application flow
+- Email/SMS integration testing
+- File storage integration
+- Database integration
+
+10.3 Security Testing
+- Authentication bypass testing
+- Authorization testing
+- File upload security testing
+- SQL injection testing
+
+11. DOCUMENTATION REQUIREMENTS
+==============================
+11.1 API Documentation
+- OpenAPI/Swagger specification
+- Endpoint descriptions
+- Request/response examples
+- Error codes and messages
+
+11.2 Database Documentation
+- Schema documentation
+- Relationship diagrams
+- Index optimization
+- Query performance guidelines
+
+11.3 Deployment Documentation
+- Environment setup
+- Configuration management
+- Deployment procedures
+- Troubleshooting guides
+
+12. COMPLIANCE REQUIREMENTS
+===========================
+12.1 Data Protection
+- GDPR compliance
+- Nigerian Data Protection Regulation (NDPR)
+- Data retention policies
+- User consent management
+
+12.2 Audit Requirements
+- Application submission logs
+- Judge scoring logs
+- Admin action logs
+- Data access logs
+
+13. BACKUP AND RECOVERY
+=======================
+13.1 Database Backup
+- Daily automated backups
+- Point-in-time recovery
+- Backup verification
+- Off-site backup storage
+
+13.2 File Backup
+- File storage backup
+- Document versioning
+- Recovery procedures
+- Backup testing
+
+14. MONITORING AND ALERTING
+===========================
+14.1 Application Monitoring
+- Response time monitoring
+- Error rate monitoring
+- User activity monitoring
+- Performance metrics
+
+14.2 Infrastructure Monitoring
+- Server health monitoring
+- Database performance monitoring
+- File storage monitoring
+- Network monitoring
+
+15. MAINTENANCE REQUIREMENTS
+============================
+15.1 Regular Maintenance
+- Database optimization
+- Log rotation and cleanup
+- File storage cleanup
+- Security updates
+
+15.2 Updates and Patches
+- Security patch management
+- Feature updates
+- Bug fixes
+- Performance improvements
+
+================================================================
+END OF BACKEND REQUIREMENTS DOCUMENT
+================================================================

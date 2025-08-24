@@ -12,7 +12,7 @@ const HomePage: React.FC = () => {
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
               Katsina State nMSME
-              <span className="block text-yellow-400">Awards 2024</span>
+              <span className="block text-yellow-400">Awards 2025</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto leading-relaxed">
               Celebrating Excellence in Nano, Micro, Small & Medium Enterprises

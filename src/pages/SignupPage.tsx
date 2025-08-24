@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Award, Mail, Phone, Lock, Eye, EyeOff, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useUser } from '../App';
+import { authAPI } from '../services/api';
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+  const { setUserData } = useUser();
   const [step, setStep] = useState(1); // 1: Basic info, 2: OTP verification, 3: Password setup
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string>(''); // Add this to store user_id
+  const [successMessage, setSuccessMessage] = useState<string>(''); // Add success message state
   
   const [formData, setFormData] = useState({
     fullName: '',
@@ -92,21 +98,159 @@ const SignupPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNextStep = () => {
+  const handleNextStep = async () => {
     if (step === 1 && validateStep1()) {
-      setStep(2);
-      // In real app, send OTP here
+      setIsLoading(true);
+      setSuccessMessage(''); // Clear any previous messages
+      try {
+        // Split full name into first and last name
+        const nameParts = formData.fullName.trim().split(' ');
+        const firstName = nameParts[0];
+        const lastName = nameParts.slice(1).join(' ') || '';
+
+        const response = await authAPI.registerStep1({
+          first_name: firstName,
+          last_name: lastName,
+          email: formData.email,
+          phone: formData.phone
+        });
+
+        if (response.success && response.data?.user_id) {
+          setUserId(response.data.user_id); // Store user_id for next steps
+          setStep(2);
+        } else {
+          setErrors({ email: response.message || 'Failed to send OTP' });
+        }
+      } catch (error: any) {
+        console.error('Registration error:', error);
+        
+        // Handle backend validation errors
+        if (error.message && error.message.includes('Validation failed')) {
+          // Parse validation errors from backend
+          const validationErrors: { [key: string]: string } = {};
+          
+          // Map backend field names to frontend field names
+          if (error.message.includes('first_name') || error.message.includes('last_name')) {
+            validationErrors.fullName = 'Please enter a valid full name (2-50 characters)';
+          }
+          if (error.message.includes('email')) {
+            validationErrors.email = 'Please enter a valid email address';
+          }
+          if (error.message.includes('phone')) {
+            validationErrors.phone = 'Please enter a valid Nigerian phone number';
+          }
+          if (error.message.includes('User already exists')) {
+            validationErrors.email = 'An account with this email or phone already exists';
+          }
+          
+          setErrors(validationErrors);
+        } else {
+          // Generic error
+          setErrors({ email: error.message || 'Failed to send OTP. Please try again.' });
+        }
+      } finally {
+        setIsLoading(false);
+      }
     } else if (step === 2 && validateStep2()) {
-      setStep(3);
+      setIsLoading(true);
+      setSuccessMessage(''); // Clear any previous messages
+      try {
+        const response = await authAPI.registerStep2({
+          user_id: userId, // Use stored user_id
+          otp: formData.otp
+        });
+
+        if (response.success && response.data?.user_id) {
+          // OTP verified successfully - show success message and move to next step
+          setSuccessMessage('OTP verified successfully');
+          setErrors({}); // Clear any existing errors
+          setTimeout(() => {
+            setStep(3);
+            setSuccessMessage(''); // Clear success message when moving to next step
+          }, 1500); // Wait 1.5 seconds to show success message
+        } else {
+          setErrors({ otp: response.message || 'Invalid OTP' });
+        }
+      } catch (error: any) {
+        console.error('OTP verification error:', error);
+        
+        // Handle specific OTP errors
+        if (error.message.includes('expired')) {
+          setErrors({ otp: 'OTP has expired. Please request a new one.' });
+        } else if (error.message.includes('Invalid OTP')) {
+          setErrors({ otp: 'Invalid OTP code. Please check and try again.' });
+        } else {
+          setErrors({ otp: error.message || 'Invalid OTP. Please try again.' });
+        }
+      } finally {
+        setIsLoading(false);
+      }
     } else if (step === 3 && validateStep3()) {
-      // Complete registration and redirect to dashboard
-      navigate('/dashboard');
+      setIsLoading(true);
+      setSuccessMessage(''); // Clear any previous messages
+      try {
+        const response = await authAPI.registerStep3({
+          user_id: userId, // Use stored user_id
+          password: formData.password
+        });
+
+        if (response.success && response.data?.token && response.data?.user) {
+          // Save user data to global context and localStorage
+          setUserData({
+            fullName: formData.fullName,
+            email: formData.email,
+            phone: formData.phone,
+            isAuthenticated: true
+          });
+
+          // Save token to localStorage
+          localStorage.setItem('token', response.data.token);
+          
+          navigate('/dashboard');
+        } else {
+          setErrors({ password: response.message || 'Registration failed' });
+        }
+      } catch (error: any) {
+        console.error('Registration completion error:', error);
+        
+        // Handle password validation errors
+        if (error.message.includes('Password must be at least 6 characters')) {
+          setErrors({ password: 'Password must be at least 6 characters long' });
+        } else {
+          setErrors({ password: error.message || 'Registration failed. Please try again.' });
+        }
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
-  const handleResendOTP = () => {
-    // In real app, resend OTP here
-    alert('OTP resent to your email/phone');
+  const handleResendOTP = async () => {
+    setIsLoading(true);
+    try {
+      const nameParts = formData.fullName.trim().split(' ');
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(' ') || '';
+
+      const response = await authAPI.registerStep1({
+        first_name: firstName,
+        last_name: lastName,
+        email: formData.email,
+        phone: formData.phone
+      });
+
+      if (response.success && response.data?.user_id) {
+        setUserId(response.data.user_id); // Update user_id if resending
+        alert('OTP resent to your email/phone');
+      } else {
+        alert('Failed to resend OTP. Please try again.');
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      alert('Failed to resend OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -264,14 +408,18 @@ const SignupPage: React.FC = () => {
                 {errors.otp && (
                   <p className="text-red-500 text-sm mt-1">{errors.otp}</p>
                 )}
+                {successMessage && (
+                  <p className="text-green-600 text-sm mt-1 font-medium">{successMessage}</p>
+                )}
               </div>
 
               <div className="text-center">
                 <button
                   onClick={handleResendOTP}
-                  className="text-green-600 hover:text-green-700 font-medium"
+                  disabled={isLoading}
+                  className="text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
                 >
-                  Didn't receive code? Resend
+                  {isLoading ? 'Sending...' : "Didn't receive code? Resend"}
                 </button>
               </div>
             </div>
@@ -344,9 +492,17 @@ const SignupPage: React.FC = () => {
           <div className="mt-8">
             <button
               onClick={handleNextStep}
-              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+              disabled={isLoading}
+              className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {step === 1 ? 'Send Verification Code' : step === 2 ? 'Verify Code' : 'Create Account'}
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  {step === 1 ? 'Sending OTP...' : step === 2 ? 'Verifying...' : 'Creating Account...'}
+                </div>
+              ) : (
+                step === 1 ? 'Send Verification Code' : step === 2 ? 'Verify Code' : 'Create Account'
+              )}
             </button>
           </div>
 

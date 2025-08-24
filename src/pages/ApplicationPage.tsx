@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { CheckCircle, Upload, FileText, Building, User, Mail, Phone, MapPin, Calendar, DollarSign, Users, Award, AlertCircle } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { CheckCircle, Upload, FileText, Building, User, Mail, Phone, MapPin, Calendar, DollarSign, Users, Award, AlertCircle, Info } from 'lucide-react';
+import { useUser } from '../App';
+import { categoriesAPI, applicationsAPI, documentsAPI } from '../services/api';
+import type { Category, Application } from '../services/api';
 
 const ApplicationPage: React.FC = () => {
   const location = useLocation();
-  const selectedCategory = location.state?.selectedCategory || 1;
+  const navigate = useNavigate();
+  const { userData } = useUser();
+  const selectedCategory = location.state?.selectedCategory || 'fashion';
   
   const [currentStep, setCurrentStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     // Business Information
     businessName: '',
@@ -38,22 +45,50 @@ const ApplicationPage: React.FC = () => {
     futureGoals: '',
     
     // Documents
-    businessLicense: null,
-    taxClearance: null,
-    financialStatements: null,
-    supportingDocuments: null
+    businessLicense: null as File | null,
+    taxClearance: null as File | null,
+    financialStatements: null as File | null,
+    supportingDocuments: null as File | null
   });
 
-  const categories = [
-    { id: 1, name: "Fashion Award" },
-    { id: 2, name: "Information Technology (IT) Award" },
-    { id: 3, name: "Agribusiness Award" },
-    { id: 4, name: "Food & Beverage Award" },
-    { id: 5, name: "Light Manufacturing Award" },
-    { id: 6, name: "Creative Enterprise Award" },
-    { id: 7, name: "Special Nano Category" },
-    { id: 8, name: "Emerging Enterprise Award" }
-  ];
+  // Load categories from API
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const response = await categoriesAPI.getAll();
+        if (response.success && response.data) {
+          setCategories(response.data);
+        }
+      } catch (error) {
+        console.error('Failed to load categories:', error);
+        // Fallback categories
+        setCategories([
+          { id: 'fashion', name: 'Fashion Award', description: 'Fashion and textile businesses' },
+          { id: 'it', name: 'Information Technology (IT) Award', description: 'Technology and software businesses' },
+          { id: 'agribusiness', name: 'Agribusiness Award', description: 'Agricultural and farming businesses' },
+          { id: 'food_beverage', name: 'Food & Beverage Award', description: 'Food and beverage businesses' },
+          { id: 'light_manufacturing', name: 'Light Manufacturing Award', description: 'Light manufacturing businesses' },
+          { id: 'creative_enterprise', name: 'Creative Enterprise Award', description: 'Creative and arts businesses' },
+          { id: 'nano_category', name: 'Special Nano Category', description: 'Special category for nano businesses' },
+          { id: 'emerging_enterprise', name: 'Emerging Enterprise Award', description: 'Emerging and innovative businesses' }
+        ]);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  // Pre-fill contact information from user context
+  useEffect(() => {
+    if (userData.isAuthenticated) {
+      setFormData(prev => ({
+        ...prev,
+        ownerName: userData.fullName,
+        email: userData.email,
+        phone: userData.phone
+      }));
+    }
+  }, [userData]);
 
   const steps = [
     { id: 1, title: "Business Information", icon: <Building className="h-5 w-5" /> },
@@ -94,10 +129,73 @@ const ApplicationPage: React.FC = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    alert('Application submitted successfully!');
+    setIsLoading(true);
+    
+    try {
+      // Create application data
+      const applicationData = {
+        category: formData.category,
+        business_description: formData.businessDescription,
+        key_achievements: formData.achievements,
+        products_services: formData.products_services,
+        market_reach: formData.targetMarket as 'local' | 'regional' | 'national' | 'international',
+        jobs_created: parseInt(formData.numberOfEmployees) || 0,
+        women_youth_percentage: 0, // Will be updated later
+        sustainability_initiatives: '',
+        export_activity: '',
+        award_funds_usage: formData.whyDeserveAward,
+        business_type: formData.businessType,
+        owner_position: formData.position,
+        alternate_phone: formData.alternatePhone,
+        why_deserve_award: formData.whyDeserveAward,
+        achievements: formData.achievements,
+        challenges: formData.challenges,
+        future_goals: formData.futureGoals,
+        target_market: formData.targetMarket
+      };
+
+      // Create application
+      const response = await applicationsAPI.create(applicationData);
+      
+      if (response.success && response.data) {
+        const applicationId = response.data.id;
+        
+        // Upload documents if any
+        if (formData.businessLicense || formData.taxClearance || formData.financialStatements || formData.supportingDocuments) {
+          const formDataToUpload = new FormData();
+          
+          if (formData.businessLicense) {
+            formDataToUpload.append('business_license', formData.businessLicense);
+          }
+          if (formData.taxClearance) {
+            formDataToUpload.append('tax_clearance', formData.taxClearance);
+          }
+          if (formData.financialStatements) {
+            formDataToUpload.append('financial_statements', formData.financialStatements);
+          }
+          if (formData.supportingDocuments) {
+            formDataToUpload.append('supporting_documents', formData.supportingDocuments);
+          }
+          
+          await documentsAPI.upload(applicationId, formDataToUpload);
+        }
+        
+        // Submit application
+        await applicationsAPI.submit(applicationId);
+        
+        alert('Application submitted successfully!');
+        navigate('/dashboard');
+      } else {
+        alert('Failed to submit application. Please try again.');
+      }
+    } catch (error) {
+      console.error('Application submission error:', error);
+      alert('Failed to submit application. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const renderStepContent = () => {
@@ -212,6 +310,21 @@ const ApplicationPage: React.FC = () => {
           <div className="space-y-6">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">Contact Information</h3>
             
+            {/* Pre-filled information notice */}
+            {userData.isAuthenticated && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <Info className="h-5 w-5 text-blue-600 mt-0.5 mr-2" />
+                  <div>
+                    <h4 className="font-semibold text-blue-800">Pre-filled Information</h4>
+                    <p className="text-blue-700 text-sm mt-1">
+                      Your contact information has been pre-filled from your account. You can edit these fields if needed.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -307,6 +420,7 @@ const ApplicationPage: React.FC = () => {
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   required
                 >
+                  <option value="">Select category</option>
                   {categories.map(category => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -512,7 +626,7 @@ const ApplicationPage: React.FC = () => {
                 </label>
                 {formData.businessLicense && (
                   <p className="text-sm text-green-600 mt-2">
-                    ✓ {(formData.businessLicense as File).name}
+                    ✓ {formData.businessLicense.name}
                   </p>
                 )}
               </div>
@@ -537,7 +651,7 @@ const ApplicationPage: React.FC = () => {
                 </label>
                 {formData.taxClearance && (
                   <p className="text-sm text-green-600 mt-2">
-                    ✓ {(formData.taxClearance as File).name}
+                    ✓ {formData.taxClearance.name}
                   </p>
                 )}
               </div>
@@ -562,7 +676,7 @@ const ApplicationPage: React.FC = () => {
                 </label>
                 {formData.financialStatements && (
                   <p className="text-sm text-green-600 mt-2">
-                    ✓ {(formData.financialStatements as File).name}
+                    ✓ {formData.financialStatements.name}
                   </p>
                 )}
               </div>
@@ -638,7 +752,7 @@ const ApplicationPage: React.FC = () => {
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h4 className="font-semibold text-gray-900 mb-4">Application Details</h4>
                 <div className="space-y-2 text-sm">
-                  <p><span className="font-medium">Category:</span> {categories.find(c => c.id === parseInt(formData.category.toString()))?.name}</p>
+                  <p><span className="font-medium">Category:</span> {categories.find(c => c.id === formData.category)?.name}</p>
                   <p><span className="font-medium">Employees:</span> {formData.numberOfEmployees}</p>
                   <p><span className="font-medium">Revenue:</span> {formData.annualRevenue}</p>
                 </div>
@@ -756,10 +870,20 @@ const ApplicationPage: React.FC = () => {
               ) : (
                 <button
                   type="submit"
-                  className="bg-green-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center"
+                  disabled={isLoading}
+                  className="bg-green-600 text-white px-8 py-3 rounded-lg font-bold hover:bg-green-700 transition-colors flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Submit Application
-                  <CheckCircle className="ml-2 h-5 w-5" />
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      Submit Application
+                      <CheckCircle className="ml-2 h-5 w-5" />
+                    </>
+                  )}
                 </button>
               )}
             </div>
