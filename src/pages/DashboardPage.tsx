@@ -45,7 +45,7 @@ const DashboardPage: React.FC = () => {
     total_applications: 0,
     total_categories: 8,
     current_phase: 'Application Period',
-    submission_deadline: '2024-12-31'
+    submission_deadline: '2025-09-20'
   });
 
   // Handle sidebar state on window resize
@@ -165,7 +165,7 @@ const DashboardPage: React.FC = () => {
       {/* Welcome Section */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl lg:rounded-2xl p-6 lg:p-8 text-white">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          <div>
+              <div>
             <h1 className="text-2xl lg:text-3xl font-bold mb-2">Welcome back, {userData.fullName.split(' ')[0]}!</h1>
             <p className="text-green-100 text-base lg:text-lg">Ready to showcase your business excellence?</p>
           </div>
@@ -174,7 +174,7 @@ const DashboardPage: React.FC = () => {
             <p className="text-xl lg:text-2xl font-bold">{overview.current_phase}</p>
           </div>
         </div>
-      </div>
+              </div>
 
       {/* Important Dates */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -189,7 +189,7 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
             <p className="text-red-600 font-semibold">{overview.submission_deadline}</p>
-          </div>
+              </div>
 
           <div className="flex items-center justify-between p-4 bg-blue-50 rounded-lg">
             <div className="flex items-center space-x-3">
@@ -200,10 +200,10 @@ const DashboardPage: React.FC = () => {
               </div>
             </div>
             <p className="text-blue-600 font-semibold">TBD</p>
-          </div>
-        </div>
-      </div>
-    </div>
+                </div>
+              </div>
+                </div>
+              </div>
   );
 
   const renderApplications = () => {
@@ -220,80 +220,93 @@ const DashboardPage: React.FC = () => {
       <div className="space-y-4 lg:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
           <h2 className="text-xl lg:text-2xl font-bold text-gray-900">My Applications</h2>
-          <button
-            onClick={handleCreateApplication}
-            className="bg-green-600 text-white px-4 lg:px-6 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 w-full sm:w-auto"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="text-sm lg:text-base">New Application</span>
-          </button>
+          {applications.length === 0 && (
+            <button
+              onClick={handleCreateApplication}
+              className="bg-green-600 text-white px-4 lg:px-6 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2 w-full sm:w-auto"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="text-sm lg:text-base">New Application</span>
+            </button>
+          )}
         </div>
 
         {applications.length > 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Category
-                    </th>
-                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="hidden sm:table-cell px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Submitted
-                    </th>
-                    <th className="hidden lg:table-cell px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Score
-                    </th>
-                    <th className="px-4 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {applications.map((app) => (
-                    <tr key={app.id} className="hover:bg-gray-50">
-                      <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{app.category}</div>
-                        <div className="sm:hidden text-xs text-gray-500 mt-1">
-                          {new Date(app.created_at).toLocaleDateString()}
+          <div className="space-y-6">
+            {applications.map((app) => (
+              <div key={app.id} className="bg-gradient-to-br from-white to-green-50 rounded-xl shadow-md border border-green-100 p-5 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+                  {/* Left Section - Main Content */}
+                  <div className="flex-1">
+                    {/* Header with Category and Status */}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                          <h3 className="text-2xl font-bold text-gray-900">{app.category}</h3>
                         </div>
-                      </td>
-                      <td className="px-4 lg:px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(app.status)}`}>
-                          {getStatusIcon(app.status)}
-                          <span className="ml-1">{app.status.replace('_', ' ')}</span>
+                        <p className="text-lg text-gray-700 font-medium">{app.business_name}</p>
+                      </div>
+                      
+                      {/* Status Badge */}
+                      <div className="flex items-center gap-3">
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-green-100 text-green-800 border border-green-200">
+                          <div className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></div>
+                          <span className="capitalize">{(app.status || 'submitted').replace('_', ' ')}</span>
                         </span>
-                      </td>
-                      <td className="hidden sm:table-cell px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(app.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="hidden lg:table-cell px-4 lg:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {stats.average_score || 0}%
-                      </td>
-                      <td className="px-4 lg:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
-                          <button className="text-blue-600 hover:text-blue-900">
-                            <Eye className="h-4 w-4" />
-                          </button>
-                          {app.status === 'draft' && (
-                            <button className="text-green-600 hover:text-green-900">
-                              <Edit className="h-4 w-4" />
-                            </button>
-                          )}
-                          {app.status === 'draft' && (
-                            <button className="text-red-600 hover:text-red-900">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </div>
+                    </div>
+                    
+                                         {/* Key Metrics Grid */}
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                       <div className="bg-white rounded-lg p-3 border border-green-100 shadow-sm">
+                         <div className="flex items-center justify-between mb-1">
+                           <span className="text-xs font-medium text-gray-600">Sector</span>
+                           <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                             <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                               <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                             </svg>
+                           </div>
+                         </div>
+                         <p className="text-sm font-semibold text-gray-900">{app.sector}</p>
+                       </div>
+                       
+                       <div className="bg-white rounded-lg p-3 border border-green-100 shadow-sm">
+                         <div className="flex items-center justify-between mb-1">
+                           <span className="text-xs font-medium text-gray-600">MSME Strata</span>
+                           <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                             <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                               <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                             </svg>
+                           </div>
+                         </div>
+                         <p className="text-sm font-semibold text-gray-900 capitalize">{app.msme_strata}</p>
+                       </div>
+                     </div>
+                   </div>
+                </div>
+              </div>
+            ))}
+            
+            {/* Success Notification */}
+            <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg className="h-6 w-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+                <div className="ml-4">
+                  <h3 className="text-lg font-semibold text-green-800 mb-2">Application Successfully Submitted! 🎉</h3>
+                  <p className="text-green-700 leading-relaxed">
+                    Your application has been successfully submitted and is now under review. 
+                    <span className="font-semibold"> You can only submit one application.</span> 
+                    Our team will carefully review your application and contact you with updates on your progress.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         ) : (
@@ -301,9 +314,9 @@ const DashboardPage: React.FC = () => {
             <FileText className="h-12 w-12 lg:h-16 lg:w-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-2">No applications yet</h3>
             <p className="text-sm lg:text-base text-gray-600">Start your journey by creating your first application</p>
-          </div>
-        )}
-      </div>
+                  </div>
+                )}
+              </div>
     );
   };
 

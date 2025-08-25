@@ -15,63 +15,132 @@ export interface User {
   created_at: string;
 }
 
+// New PRD Categories
+export interface Category {
+  id: string;
+  name: string;
+  description: string;
+  criteria?: string[];
+  application_count?: number;
+}
+
+// MSME Strata
+export interface MSMEStrata {
+  id: string;
+  name: string;
+  description: string;
+  staff_range: string;
+  asset_range: string;
+}
+
 export interface BusinessProfile {
   id: string;
   business_name: string;
   cac_number: string;
-  sector: string;
-  msme_category: 'nano' | 'micro' | 'small' | 'medium';
+  sector: string; // New PRD categories
+  msme_strata: string; // New MSME strata
   business_type: 'sole-proprietorship' | 'partnership' | 'limited-company' | 'cooperative' | 'ngo';
   registration_number: string;
-  location: string;
-  owner_position: string;
-  state: string;
-  lga: string;
-  start_year: number;
+  location: {
+    state: string;
+    city: string;
+    address: string;
+  };
+  year_established: number;
   employee_count: number;
   revenue_band: string;
   website?: string;
   social_media_links?: string;
-  business_description?: string;
-}
-
-export interface Application {
-  id: string;
-  category: string;
-  status: 'draft' | 'submitted' | 'under_review' | 'shortlisted' | 'approved' | 'rejected';
   business_description: string;
   key_achievements: string;
-  products_services?: string;
-  market_reach?: 'local' | 'regional' | 'national' | 'international';
+  products_services: string;
+  market_reach: 'local' | 'regional' | 'national' | 'international';
   jobs_created: number;
-  women_youth_percentage?: number;
-  sustainability_initiatives?: string;
-  export_activity?: string;
-  award_funds_usage: string;
+  women_youth_percentage: number;
+  export_activity: {
+    has_exports: boolean;
+    details?: string;
+  };
+  sustainability_initiatives: {
+    has_initiatives: boolean;
+    details?: string;
+  };
+  award_usage_plans: string;
+}
+
+// Application with embedded business details (new backend structure)
+export interface Application {
+  id: string;
+  category: string; // New PRD categories
+  status: 'draft' | 'submitted' | 'pre_screening' | 'under_review' | 'shortlisted' | 'finalist' | 'winner' | 'rejected';
+  
+  // Embedded Business Details (Required)
+  business_name: string;
+  cac_number: string;
+  sector: string;
+  msme_strata: string;
+  location: {
+    state: string;
+    lga: string;
+  };
+  year_established: number;
+  employee_count: number;
+  revenue_band: string;
+  business_description: string;
+  website?: string;
+  social_media?: {
+    facebook?: string;
+    twitter?: string;
+    linkedin?: string;
+    instagram?: string;
+  };
+  
+  // Application Details
+  key_achievements: string;
+  products_services_description: string;
+  jobs_created: number;
+  women_youth_percentage: number;
+  export_activity: {
+    has_exports: boolean;
+    details?: string;
+  };
+  sustainability_initiatives: {
+    has_initiatives: boolean;
+    details?: string;
+  };
+  award_usage_plans: string;
+  
+  // Video pitch as link (not file upload)
+  pitch_video: {
+    url: string;
+    platform: 'youtube' | 'vimeo';
+    duration?: number;
+  };
+  
+  // Legacy fields for backward compatibility (deprecated)
+  products_services?: string;
+  sustainability_initiatives_legacy?: string;
+  export_activity_legacy?: string;
+  award_funds_usage?: string;
   video_link?: string;
-  business_type: string;
-  owner_position: string;
+  business_type?: string;
+  owner_position?: string;
   alternate_phone?: string;
-  why_deserve_award: string;
-  achievements: string;
-  challenges: string;
-  future_goals: string;
-  target_market: string;
+  why_deserve_award?: string;
+  achievements?: string;
+  challenges?: string;
+  future_goals?: string;
+  target_market?: string;
+  
   submitted_at?: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface Category {
-  id: string;
-  name: string;
-  description: string;
-  application_count?: number;
-}
-
+// Document with new PRD types
 export interface Document {
   id: string;
-  document_type: 'business_license' | 'tax_clearance' | 'financial_statements' | 'supporting_documents';
+  document_type: 'cac_certificate' | 'tax_identification' | 'product_photos' | 'business_plan' | 'financial_statements';
   file_name: string;
   file_path: string;
   file_size: number;
@@ -84,7 +153,12 @@ export interface ApplicationStats {
   total_applications: number;
   submitted: number;
   draft: number;
+  pre_screening: number;
   under_review: number;
+  shortlisted: number;
+  finalist: number;
+  winner: number;
+  rejected: number;
   average_score?: number;
 }
 
@@ -100,7 +174,14 @@ interface ApiResponse<T> {
   success: boolean;
   message?: string;
   data?: T;
-  errors?: Array<{ field: string; message: string }>;
+  error?: string;
+  details?: any[];
+}
+
+// Extended API Response for login
+interface LoginApiResponse extends ApiResponse<{ token: string; user: User }> {
+  token?: string;
+  user?: User;
 }
 
 // Helper function to handle API calls
@@ -117,31 +198,59 @@ async function apiCall<T>(
     },
     ...options,
   };
-
+  
+  console.log(`🌐 Making API call to: ${API_BASE_URL}${endpoint}`);
+  console.log(`📤 Request config:`, {
+    method: config.method || 'GET',
+    headers: config.headers,
+    body: config.body ? JSON.parse(config.body as string) : undefined
+  });
+  
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json();
+    
+    console.log(`📥 Response status: ${response.status} ${response.statusText}`);
+    
+    let data;
+    try {
+      data = await response.json();
+      console.log(`📥 Response data:`, data);
+    } catch (jsonError) {
+      console.error(`❌ Failed to parse JSON response:`, jsonError);
+      const textResponse = await response.text();
+      console.log(`📥 Raw response text:`, textResponse);
+      throw new Error(`Invalid JSON response: ${textResponse}`);
+    }
+    
+    // Special handling for login endpoint with 401 but successful response
+    if (endpoint === '/auth/login' && response.status === 401 && data.success === true) {
+      console.log('Login successful despite 401 status, treating as success');
+      return data;
+    }
     
     if (!response.ok) {
-      // Create a more detailed error message
-      let errorMessage = data.message || data.error || 'API request failed';
-      
-      // If there are validation details, include them
+      console.error(`❌ API Error - Status: ${response.status}, Data:`, data);
+      let errorMessage = data.message || data.error || `HTTP ${response.status}: ${response.statusText}`;
       if (data.details && Array.isArray(data.details)) {
         const validationErrors = data.details.map((detail: any) => detail.msg).join(', ');
         errorMessage = `Validation failed: ${validationErrors}`;
       }
-      
       const error = new Error(errorMessage);
       (error as any).status = response.status;
       (error as any).details = data.details;
+      (error as any).response = data;
       throw error;
     }
-    
     return data;
-  } catch (error) {
-    console.error('API Error:', error);
-    throw error;
+  } catch (error) { 
+    console.error('💥 API Call Failed:', error);
+    console.error('🔍 Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined,
+      endpoint,
+      config
+    });
+    throw error; 
   }
 }
 
@@ -184,9 +293,9 @@ export const authAPI = {
 
   // Login
   login: async (credentials: {
-    email: string;
+    email_or_phone: string;
     password: string;
-  }): Promise<ApiResponse<{ token: string; user: User }>> => {
+  }): Promise<LoginApiResponse> => {
     return apiCall('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
@@ -295,6 +404,11 @@ export const categoriesAPI = {
   getById: async (id: string): Promise<ApiResponse<Category>> => {
     return apiCall(`/categories/${id}`);
   },
+
+  // Get MSME strata
+  getMSMEStrata: async (): Promise<ApiResponse<MSMEStrata[]>> => {
+    return apiCall('/categories/msme-strata');
+  },
 };
 
 // Applications API
@@ -332,6 +446,45 @@ export const applicationsAPI = {
       method: 'POST',
       body: JSON.stringify(data),
     });
+  },
+
+  // Create application with documents (comprehensive endpoint)
+  createWithDocuments: async (formData: FormData): Promise<ApiResponse<{
+    application_id: string;
+    workflow_stage: string;
+    documents_uploaded: number;
+    total_documents: number;
+  }>> => {
+    const token = localStorage.getItem('token');
+    
+    console.log('🌐 Making API call to comprehensive endpoint:', `${API_BASE_URL}/applications/complete`);
+    console.log('📤 FormData being sent:');
+    for (let [key, value] of formData.entries()) {
+      console.log(`  ${key}:`, value);
+    }
+
+    const response = await fetch(`${API_BASE_URL}/applications/complete`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    console.log(`📥 Response status: ${response.status} ${response.statusText}`);
+
+    const data = await response.json();
+    console.log('📥 Response data:', data);
+    
+    if (!response.ok) {
+      console.error(`❌ API Error - Status: ${response.status}, Data:`, data);
+      const error = new Error(data.error || data.message || 'Application creation failed');
+      (error as any).status = response.status;
+      (error as any).response = data;
+      throw error;
+    }
+    
+    return data;
   },
 
   // Update application
@@ -372,6 +525,15 @@ export const applicationsAPI = {
   getTimeline: async (id: string): Promise<ApiResponse<ApplicationTimeline>> => {
     return apiCall(`/applications/${id}/timeline`);
   },
+
+  // Validate application before submission
+  validate: async (id: string): Promise<ApiResponse<{
+    is_valid: boolean;
+    errors: string[];
+    warnings: string[];
+  }>> => {
+    return apiCall(`/applications/${id}/validation`);
+  },
 };
 
 // Documents API
@@ -396,6 +558,20 @@ export const documentsAPI = {
     }
 
     return response.json();
+  },
+
+  // Upload video link (YouTube/Vimeo)
+  uploadVideoLink: async (
+    applicationId: string,
+    videoData: {
+      url: string;
+      platform: 'youtube' | 'vimeo';
+    }
+  ): Promise<ApiResponse<{ video_url: string; platform: string }>> => {
+    return apiCall(`/documents/upload-video-link/${applicationId}`, {
+      method: 'POST',
+      body: JSON.stringify(videoData),
+    });
   },
 
   // Get application documents
