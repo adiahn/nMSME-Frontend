@@ -1,7 +1,7 @@
 // API Service for nMSME Awards Portal
-// Base URL: http://localhost:5000/api
+// Base URL: https://nmsme-backend.onrender.com/api
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'https://nmsme-backend.onrender.com/api';
 
 // Types
 export interface User {
