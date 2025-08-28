@@ -10,6 +10,8 @@ import AboutPage from './pages/AboutPage';
 import DashboardPage from './pages/DashboardPage';
 import SignupPage from './pages/SignupPage';
 import LoginPage from './pages/LoginPage';
+import JudgeLoginPage from './pages/JudgeLoginPage';
+import JudgeDashboardPage from './pages/JudgeDashboardPage';
 
 // User context for managing user data globally
 interface UserData {
@@ -23,6 +25,7 @@ interface UserContextType {
   userData: UserData;
   setUserData: (data: UserData) => void;
   updateUserData: (updates: Partial<UserData>) => void;
+  logout: () => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -58,11 +61,23 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     localStorage.setItem('userData', JSON.stringify(data));
   };
 
+  const logout = () => {
+    setUserData({
+      fullName: '',
+      email: '',
+      phone: '',
+      isAuthenticated: false
+    });
+    localStorage.removeItem('userData');
+    localStorage.removeItem('token');
+  };
+
   return (
     <UserContext.Provider value={{ 
       userData, 
       setUserData: setUserDataHandler, 
-      updateUserData 
+      updateUserData,
+      logout
     }}>
       {children}
     </UserContext.Provider>
@@ -70,7 +85,7 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 };
 
 // Pages that should not show header and footer
-const AUTH_PAGES = ['/signup', '/login', '/dashboard'];
+const AUTH_PAGES = ['/signup', '/login', '/dashboard', '/judge/login', '/judge/dashboard'];
 
 function AppContent() {
   const location = useLocation();
@@ -89,6 +104,8 @@ function AppContent() {
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/judge/login" element={<JudgeLoginPage />} />
+          <Route path="/judge/dashboard" element={<JudgeDashboardPage />} />
         </Routes>
       </main>
       {!isAuthPage && <Footer />}

@@ -272,6 +272,16 @@ const LoginPage: React.FC = () => {
               Forgot your password?
             </Link>
           </div>
+
+          {/* Judge Login */}
+          <div className="text-center mt-4">
+            <p className="text-gray-500 text-sm">
+              Are you a judge?{' '}
+              <Link to="/judge/login" className="text-green-600 hover:text-green-700 font-medium">
+                Access Judge Portal
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

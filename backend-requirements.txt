@@ -414,7 +414,7 @@ GET /api/public/timeline
 - Access control for file downloads
 - Secure file storage paths
 
-7. PERFORMANCE REQUIREMENTS
+7. PERFORMANCE REQUIREMENTS     
 ===========================
 7.1 Response Times
 - API endpoints: < 500ms average
