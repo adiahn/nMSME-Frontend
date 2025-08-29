@@ -87,13 +87,13 @@ const JudgeDashboardPage: React.FC = () => {
   }, [user, navigate]);
 
   const loadJudgeData = async () => {
-    try {
-      // TODO: Replace with actual API calls
+      try {
+        // TODO: Replace with actual API calls
       // const response = await judgeAPI.getDashboard();
       // setStats(response.data.stats);
       // setApplications(response.data.applications);
-      
-      // Mock data for now
+        
+        // Mock data for now
       setStats({
         total_applications: 45,
         reviewed_applications: 23,
@@ -104,24 +104,24 @@ const JudgeDashboardPage: React.FC = () => {
       });
       
       setApplications([
-        {
-          id: '1',
-          business_name: 'Tech Solutions Ltd',
-          category: 'Information Technology (IT)',
+          {
+            id: '1',
+            business_name: 'Tech Solutions Ltd',
+            category: 'Information Technology (IT)',
           sector: 'Information Technology (IT)',
-          msme_strata: 'Small Enterprise',
+            msme_strata: 'Small Enterprise',
           status: 'under_review',
           created_at: '2025-08-25',
           score: 8.5,
           reviewed_by: 'Judge 1',
           review_date: '2025-08-26'
-        },
-        {
-          id: '2',
-          business_name: 'Green Energy Co',
-          category: 'Renewable Energy',
+          },
+          {
+            id: '2',
+            business_name: 'Green Energy Co',
+            category: 'Renewable Energy',
           sector: 'Renewable Energy',
-          msme_strata: 'Medium Enterprise',
+            msme_strata: 'Medium Enterprise',
           status: 'pending_review',
           created_at: '2025-08-24'
         }
@@ -137,12 +137,12 @@ const JudgeDashboardPage: React.FC = () => {
           status: 'approved'
         }
       ]);
-    } catch (error) {
+      } catch (error) {
       console.error('Error loading judge data:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
   const handleLogout = () => {
     logout();
@@ -198,39 +198,39 @@ const JudgeDashboardPage: React.FC = () => {
       {/* Conflict Declaration Alert */}
       {conflicts.length > 0 && (
         <div className="bg-orange-50 border border-orange-200 rounded-xl p-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
               <div className="p-2 bg-orange-100 rounded-full">
                 <span className="text-orange-600 font-bold">⚠️</span>
               </div>
-              <div>
+                <div>
                 <h3 className="text-lg font-semibold text-orange-800">Conflict of Interest Declared</h3>
                 <p className="text-orange-700">You have {conflicts.length} conflict(s) declared. These applications cannot be reviewed.</p>
+                </div>
               </div>
-            </div>
             <button
               onClick={() => setShowConflictForm(true)}
               className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
             >
               View Conflicts
             </button>
+            </div>
           </div>
-        </div>
       )}
-
+          
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 lg:gap-6">
         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
-          <div className="flex items-center justify-between">
-            <div>
+            <div className="flex items-center justify-between">
+                <div>
               <p className="text-sm text-gray-600">Total Applications</p>
               <p className="text-2xl font-bold text-gray-900">{stats.total_applications}</p>
-            </div>
+                </div>
             <div className="p-3 bg-blue-100 rounded-full">
               <FileText className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           </div>
-        </div>
 
         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
           <div className="flex items-center justify-between">
@@ -241,15 +241,15 @@ const JudgeDashboardPage: React.FC = () => {
             <div className="p-3 bg-green-100 rounded-full">
               <Eye className="w-6 h-6 text-green-600" />
             </div>
-          </div>
         </div>
+      </div>
 
         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
           <div className="flex items-center justify-between">
-            <div>
+      <div>
               <p className="text-sm text-gray-600">Pending Review</p>
               <p className="text-2xl font-bold text-orange-600">{stats.pending_reviews}</p>
-            </div>
+              </div>
             <div className="p-3 bg-orange-100 rounded-full">
               <Clock className="w-6 h-6 text-orange-600" />
             </div>
@@ -258,16 +258,16 @@ const JudgeDashboardPage: React.FC = () => {
 
         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
           <div className="flex items-center justify-between">
-            <div>
+              <div>
               <p className="text-sm text-gray-600">Average Score</p>
               <p className="text-2xl font-bold text-purple-600">{stats.average_score}</p>
             </div>
             <div className="p-3 bg-purple-100 rounded-full">
               <Star className="w-6 h-6 text-purple-600" />
+              </div>
             </div>
           </div>
-        </div>
-
+          
         <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
@@ -299,11 +299,11 @@ const JudgeDashboardPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-red-50 border border-red-200 rounded-xl p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3">
                 <div className="p-2 bg-red-100 rounded-full">
                   <Calendar className="w-5 h-5 text-red-600" />
-                </div>
-                <div>
+              </div>
+              <div>
                   <p className="font-medium text-red-800">Review Deadline</p>
                   <p className="text-sm text-red-600">Complete all reviews</p>
                 </div>
@@ -313,21 +313,21 @@ const JudgeDashboardPage: React.FC = () => {
               </div>
             </div>
           </div>
-
+          
           <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3">
                 <div className="p-2 bg-blue-100 rounded-full">
                   <Trophy className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
+              </div>
+              <div>
                   <p className="font-medium text-blue-800">Awards Ceremony</p>
                   <p className="text-sm text-blue-600">Winners announcement</p>
-                </div>
               </div>
+            </div>
               <div className="text-right">
                 <p className="text-lg font-semibold text-blue-600">TBD</p>
-              </div>
+          </div>
             </div>
           </div>
         </div>
@@ -385,12 +385,12 @@ const JudgeDashboardPage: React.FC = () => {
         <div className="flex items-center space-x-3 mt-4 sm:mt-0">
           <div className="relative">
             <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search applications..."
+          <input
+            type="text"
+            placeholder="Search applications..."
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-            />
-          </div>
+          />
+        </div>
           <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
             <Filter className="w-5 h-5 text-gray-600" />
           </button>
@@ -467,7 +467,7 @@ const JudgeDashboardPage: React.FC = () => {
       
       <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Judge Profile</h3>
-        <div className="space-y-4">
+      <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
             <input
@@ -513,7 +513,7 @@ const JudgeDashboardPage: React.FC = () => {
           <div className="space-y-3">
             {conflicts.map((conflict) => (
               <div key={conflict.id} className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-red-800">{conflict.business_name}</p>
                     <p className="text-sm text-red-600">{conflict.reason}</p>
@@ -607,14 +607,14 @@ const JudgeDashboardPage: React.FC = () => {
               'bg-gray-100 text-gray-800'
             }`}>
               {selectedApplication.status.replace('_', ' ')}
-            </span>
+                  </span>
             <button
               onClick={() => setShowConflictForm(true)}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
             >
               Declare Conflict
             </button>
-          </div>
+                </div>
         </div>
 
         {/* Application Details Grid */}
@@ -625,18 +625,18 @@ const JudgeDashboardPage: React.FC = () => {
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Overview</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
+                  <div>
                   <label className="block text-sm font-medium text-gray-700">Business Name</label>
                   <p className="text-sm text-gray-900 font-medium">{selectedApplication.business_name}</p>
-                </div>
-                <div>
+                  </div>
+                  <div>
                   <label className="block text-sm font-medium text-gray-700">MSME Strata</label>
                   <p className="text-sm text-gray-900">{selectedApplication.msme_strata}</p>
-                </div>
-                <div>
+                  </div>
+                  <div>
                   <label className="block text-sm font-medium text-gray-700">Sector</label>
                   <p className="text-sm text-gray-900">{selectedApplication.sector}</p>
-                </div>
+                  </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Category</label>
                   <p className="text-sm text-gray-900">{selectedApplication.category}</p>
@@ -653,7 +653,7 @@ const JudgeDashboardPage: React.FC = () => {
                     'bg-gray-100 text-gray-800'
                   }`}>
                     {selectedApplication.status.replace('_', ' ')}
-                  </span>
+                    </span>
                 </div>
               </div>
             </div>
@@ -725,7 +725,7 @@ const JudgeDashboardPage: React.FC = () => {
                   </div>
                   <button className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
                     View
-                  </button>
+                </button>
                 </div>
                 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -742,7 +742,7 @@ const JudgeDashboardPage: React.FC = () => {
                   </div>
                   <button className="px-3 py-1 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm">
                     View
-                  </button>
+                </button>
                 </div>
 
                 <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
@@ -759,10 +759,10 @@ const JudgeDashboardPage: React.FC = () => {
                   </div>
                   <button className="px-3 py-1 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm">
                     View (5)
-                  </button>
-                </div>
+                </button>
               </div>
             </div>
+          </div>
 
             {/* Video Pitch */}
             <div className="bg-white rounded-xl p-6 shadow-md border border-gray-100">
@@ -774,7 +774,7 @@ const JudgeDashboardPage: React.FC = () => {
                   </svg>
                   <p className="text-gray-500">Video player would be embedded here</p>
                   <p className="text-sm text-gray-400">YouTube/Vimeo integration</p>
-                </div>
+          </div>
               </div>
             </div>
           </div>
@@ -867,16 +867,16 @@ const JudgeDashboardPage: React.FC = () => {
                </div>
              </div>
           </div>
-        </div>
       </div>
-    );
+    </div>
+  );
   };
 
   const renderScoringInterface = () => {
     if (!selectedApplication) return null;
 
     return (
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header with Back Button */}
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -888,7 +888,7 @@ const JudgeDashboardPage: React.FC = () => {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <div>
+          <div>
               <h2 className="text-2xl font-bold text-gray-900">Score Application</h2>
               <p className="text-gray-600">{selectedApplication.business_name} • {selectedApplication.category}</p>
             </div>
@@ -917,7 +917,7 @@ const JudgeDashboardPage: React.FC = () => {
               <p className="text-sm text-gray-600 mb-3">
                 Evaluate the uniqueness of the business model, innovative approaches, and competitive differentiation
               </p>
-              <input
+            <input
                 type="range"
                 min="0"
                 max="20"
@@ -929,7 +929,7 @@ const JudgeDashboardPage: React.FC = () => {
                 <span>0 - Poor</span>
                 <span>10 - Average</span>
                 <span>20 - Excellent</span>
-              </div>
+          </div>
             </div>
 
             {/* Market Traction & Growth */}
@@ -943,7 +943,7 @@ const JudgeDashboardPage: React.FC = () => {
               <p className="text-sm text-gray-600 mb-3">
                 Assess market validation, customer acquisition, revenue growth, and market expansion
               </p>
-              <input
+            <input
                 type="range"
                 min="0"
                 max="20"
@@ -955,7 +955,7 @@ const JudgeDashboardPage: React.FC = () => {
                 <span>0 - Poor</span>
                 <span>10 - Average</span>
                 <span>20 - Excellent</span>
-              </div>
+          </div>
             </div>
 
             {/* Impact & Job Creation */}
@@ -1142,8 +1142,8 @@ const JudgeDashboardPage: React.FC = () => {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-green-600"></div>
-      </div>
-    );
+    </div>
+  );
   }
 
   return (
@@ -1159,7 +1159,7 @@ const JudgeDashboardPage: React.FC = () => {
             />
             <span className="text-xl font-bold text-gray-800">nMSME</span>
           </div>
-          
+
           <nav className="space-y-2">
             <button
               onClick={() => setActiveTab('dashboard')}
@@ -1198,7 +1198,7 @@ const JudgeDashboardPage: React.FC = () => {
             </button>
           </nav>
         </div>
-        
+
         <div className="absolute bottom-6 left-6">
           <button
             onClick={handleLogout}
@@ -1241,7 +1241,7 @@ const JudgeDashboardPage: React.FC = () => {
 
         {/* Page Content */}
         <main className="p-6">
-          {activeTab === 'dashboard' && renderDashboard()}
+              {activeTab === 'dashboard' && renderDashboard()}
           {activeTab === 'applications' && (
             currentView === 'list' ? renderApplications() : 
             currentView === 'review' ? renderApplicationReview() :

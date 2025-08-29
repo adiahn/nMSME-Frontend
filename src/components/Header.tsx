@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Award, User, ChevronDown, Globe, Bell } from 'lucide-react';
+import { Menu, X, Award, User, ChevronDown, Globe } from 'lucide-react';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -8,9 +8,7 @@ const Header: React.FC = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const location = useLocation();
 
-  const isActive = (path: string) => {
-    return location.pathname === path ? 'text-green-600 border-b-2 border-green-600' : 'text-gray-700 hover:text-green-600';
-  };
+
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -42,36 +40,36 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-2">
+          <nav className="hidden lg:flex items-center space-x-8">
             <Link to="/" className={`relative px-6 py-3 text-sm font-semibold transition-all duration-300 ${
-              isActive('/') 
+              location.pathname === '/' 
                 ? 'text-green-700 bg-green-50 border-b-2 border-green-600' 
                 : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
             }`}>
               Home
-              {isActive('/') && (
+              {location.pathname === '/' && (
                 <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-green-600 rounded-full"></div>
               )}
             </Link>
             
             <Link to="/categories" className={`relative px-6 py-3 text-sm font-semibold transition-all duration-300 ${
-              isActive('/categories') 
+              location.pathname === '/categories' 
                 ? 'text-green-700 bg-green-50 border-b-2 border-green-600' 
                 : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
             }`}>
               Categories
-              {isActive('/categories') && (
+              {location.pathname === '/categories' && (
                 <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-green-600 rounded-full"></div>
               )}
             </Link>
             
             <Link to="/about" className={`relative px-6 py-3 text-sm font-semibold transition-all duration-300 ${
-              isActive('/about') 
+              location.pathname === '/about' 
                 ? 'text-green-700 bg-green-50 border-b-2 border-green-600' 
                 : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
             }`}>
               About
-              {isActive('/about') && (
+              {location.pathname === '/about' && (
                 <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-green-600 rounded-full"></div>
               )}
             </Link>
@@ -102,11 +100,7 @@ const Header: React.FC = () => {
               )}
             </div>
 
-            {/* Notifications */}
-            <button className="relative p-2 text-gray-700 hover:text-green-600 rounded-lg hover:bg-gray-50 transition-all duration-200">
-              <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full"></span>
-            </button>
+
 
             {/* Sign In / Sign Up */}
             <div className="flex items-center space-x-3">
