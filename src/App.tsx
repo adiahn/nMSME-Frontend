@@ -5,7 +5,7 @@ import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
 import CategoriesPage from './pages/CategoriesPage';
 import AdminPage from './pages/AdminPage';
-import ResultsPage from './pages/ResultsPage';
+
 import AboutPage from './pages/AboutPage';
 import DashboardPage from './pages/DashboardPage';
 import SignupPage from './pages/SignupPage';
@@ -99,7 +99,7 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/categories" element={<CategoriesPage />} />
           <Route path="/admin" element={<AdminPage />} />
-          <Route path="/results" element={<ResultsPage />} />
+
           <Route path="/about" element={<AboutPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/signup" element={<SignupPage />} />

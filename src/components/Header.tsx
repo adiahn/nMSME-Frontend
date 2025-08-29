@@ -30,9 +30,11 @@ const Header: React.FC = () => {
         <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3">
-            <div className="bg-gradient-to-br from-green-600 to-green-700 p-2.5 rounded-xl shadow-lg">
-              <Award className="h-8 w-8 text-white" />
-            </div>
+            <img 
+              src="/src/img/logo.png" 
+              alt="nMSME Awards Logo" 
+              className="h-20 w-auto"
+            />
             <div>
               <h1 className="text-xl font-bold text-gray-900">Katsina nMSME</h1>
               <p className="text-sm text-gray-600">Awards Portal</p>
@@ -40,18 +42,38 @@ const Header: React.FC = () => {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden lg:flex space-x-1">
-            <Link to="/" className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${isActive('/')}`}>
+          <nav className="hidden lg:flex items-center space-x-2">
+            <Link to="/" className={`relative px-6 py-3 text-sm font-semibold transition-all duration-300 ${
+              isActive('/') 
+                ? 'text-green-700 bg-green-50 border-b-2 border-green-600' 
+                : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+            }`}>
               Home
+              {isActive('/') && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-green-600 rounded-full"></div>
+              )}
             </Link>
-            <Link to="/categories" className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${isActive('/categories')}`}>
+            
+            <Link to="/categories" className={`relative px-6 py-3 text-sm font-semibold transition-all duration-300 ${
+              isActive('/categories') 
+                ? 'text-green-700 bg-green-50 border-b-2 border-green-600' 
+                : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+            }`}>
               Categories
+              {isActive('/categories') && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-green-600 rounded-full"></div>
+              )}
             </Link>
-            <Link to="/results" className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${isActive('/results')}`}>
-              Winners
-            </Link>
-            <Link to="/about" className={`px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 ${isActive('/about')}`}>
+            
+            <Link to="/about" className={`relative px-6 py-3 text-sm font-semibold transition-all duration-300 ${
+              isActive('/about') 
+                ? 'text-green-700 bg-green-50 border-b-2 border-green-600' 
+                : 'text-gray-700 hover:text-green-600 hover:bg-green-50'
+            }`}>
               About
+              {isActive('/about') && (
+                <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-green-600 rounded-full"></div>
+              )}
             </Link>
           </nav>
 

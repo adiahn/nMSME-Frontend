@@ -9,9 +9,11 @@ const Footer: React.FC = () => {
           {/* Logo and Description */}
           <div className="col-span-1 lg:col-span-2">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-green-600 p-2 rounded-lg">
-                <Award className="h-8 w-8 text-white" />
-              </div>
+              <img 
+                src="/src/img/logo.png" 
+                alt="nMSME Awards Logo" 
+                className="h-12 w-auto"
+              />
               <div>
                 <h2 className="text-xl font-bold">Katsina nMSME Awards</h2>
                 <p className="text-gray-400">Excellence in Enterprise</p>
@@ -41,7 +43,7 @@ const Footer: React.FC = () => {
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Home</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Categories</a></li>
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Application Process</a></li>
-              <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Results</a></li>
+
               <li><a href="#" className="text-gray-400 hover:text-white transition-colors">Guidelines</a></li>
             </ul>
           </div>

@@ -81,9 +81,11 @@ const JudgeLoginPage: React.FC = () => {
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-green-600 rounded-2xl flex items-center justify-center">
-              <span className="text-white font-bold text-3xl">n</span>
-            </div>
+            <img 
+              src="/src/img/logo.png" 
+              alt="nMSME Awards Logo" 
+              className="h-24 w-auto"
+            />
           </div>
           <h2 className="text-3xl font-bold text-gray-900">Judge Login</h2>
           <p className="mt-2 text-gray-600">Access the nMSME Awards Portal</p>

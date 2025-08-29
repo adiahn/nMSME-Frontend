@@ -1152,9 +1152,11 @@ const JudgeDashboardPage: React.FC = () => {
       <div className="w-64 bg-gray-100 min-h-screen flex-shrink-0 border-r border-gray-200 shadow-sm">
         <div className="p-6">
           <div className="flex items-center space-x-2 mb-8">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">n</span>
-            </div>
+            <img 
+              src="/src/img/logo.png" 
+              alt="nMSME Awards Logo" 
+              className="h-8 w-auto"
+            />
             <span className="text-xl font-bold text-gray-800">nMSME</span>
           </div>
           
