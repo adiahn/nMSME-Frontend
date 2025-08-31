@@ -49,6 +49,7 @@ interface ConflictDeclaration {
 const JudgeDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { userData: user, logout } = useUser();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'dashboard' | 'applications' | 'settings'>('dashboard');
   const [applications, setApplications] = useState<Application[]>([]);
   const [stats, setStats] = useState<JudgeStats>({
@@ -1147,88 +1148,133 @@ const JudgeDashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-gray-100 min-h-screen flex-shrink-0 border-r border-gray-200 shadow-sm">
-        <div className="p-6">
-          <div className="flex items-center space-x-2 mb-8">
-            <img 
-              src="/src/img/logo.png" 
-              alt="nMSME Awards Logo" 
-              className="h-8 w-auto"
-            />
-            <span className="text-xl font-bold text-gray-800">nMSME</span>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
+      {/* Fixed Sidebar */}
+      <div className={`fixed inset-y-0 left-0 w-72 bg-gradient-to-b from-green-800 to-green-900 shadow-xl z-50 transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0`}>
+        {/* Header Section */}
+        <div className="p-6 border-b border-green-700">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-xl font-bold text-white">nMSME</span>
+              <p className="text-green-300 text-sm">Judge Portal</p>
+            </div>
+            {/* Mobile Close Button */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        {/* Navigation Section */}
+        <div className="px-6 py-4">
           <nav className="space-y-2">
             <button
-              onClick={() => setActiveTab('dashboard')}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+              onClick={() => {
+                setActiveTab('dashboard');
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                 activeTab === 'dashboard' 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'text-gray-700 hover:bg-gray-200'
+                  ? 'bg-green-700 text-white shadow-lg transform scale-[1.02]' 
+                  : 'text-green-100 hover:bg-green-700 hover:text-white'
               }`}
             >
               <Home className="w-5 h-5" />
-              <span>Dashboard</span>
+              <span className="font-medium">Dashboard</span>
             </button>
             
             <button
-              onClick={() => setActiveTab('applications')}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+              onClick={() => {
+                setActiveTab('applications');
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                 activeTab === 'applications' 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'text-gray-700 hover:bg-gray-200'
+                  ? 'bg-green-700 text-white shadow-lg transform scale-[1.02]' 
+                  : 'text-green-100 hover:bg-green-700 hover:text-white'
               }`}
             >
               <FileText className="w-5 h-5" />
-              <span>Applications</span>
+              <span className="font-medium">Applications</span>
             </button>
             
             <button
-              onClick={() => setActiveTab('settings')}
-              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
+              onClick={() => {
+                setActiveTab('settings');
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                 activeTab === 'settings' 
-                  ? 'bg-green-100 text-green-700' 
-                  : 'text-gray-700 hover:bg-gray-200'
+                  ? 'bg-green-700 text-white shadow-lg transform scale-[1.02]' 
+                  : 'text-green-100 hover:bg-green-700 hover:text-white'
               }`}
             >
               <Settings className="w-5 h-5" />
-              <span>Settings</span>
+              <span className="font-medium">Settings</span>
             </button>
           </nav>
         </div>
 
-        <div className="absolute bottom-6 left-6">
-          <button
-            onClick={handleLogout}
-            className="flex items-center space-x-2 text-red-600 hover:text-red-700 font-medium"
-          >
-            <LogOut className="w-5 h-5" />
-            <span>Logout</span>
-          </button>
+        {/* Logout Section */}
+        <div className="absolute bottom-0 left-0 right-0">
+          {/* Divider above logout */}
+          <div className="mx-6 border-t border-green-700 mb-6"></div>
+          <div className="px-6 pb-6">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center space-x-3 px-4 py-3 text-red-300 hover:text-white hover:bg-red-600 rounded-lg transition-all duration-200 font-medium"
+            >
+              <LogOut className="w-5 h-5" />
+              <span>Logout</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 min-w-0 overflow-x-auto">
+      <div className="lg:ml-72 min-h-screen overflow-x-auto">
         {/* Header */}
-        <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
+        <header className="bg-white shadow-sm border-b border-gray-200 px-4 lg:px-6 py-4">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {activeTab === 'dashboard' ? 'Dashboard' : 
-                 activeTab === 'applications' ? 'Applications' : 'Settings'}
-              </h1>
-              {activeTab === 'dashboard' && (
-                <p className="text-gray-600">Welcome back, {user?.fullName}</p>
-              )}
+            <div className="flex items-center space-x-3 lg:space-x-4">
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <svg className="h-6 w-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              
+              <div>
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                  {activeTab === 'dashboard' ? 'Dashboard' : 
+                   activeTab === 'applications' ? 'Applications' : 'Settings'}
+                </h1>
+                {activeTab === 'dashboard' && (
+                  <p className="text-sm lg:text-base text-gray-600">Welcome back, {user?.fullName}</p>
+                )}
+              </div>
             </div>
             
             <div className="flex items-center space-x-2 lg:space-x-4">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-medium text-gray-900">{user?.fullName}</p>
-                <p className="text-sm text-gray-500">{user?.email}</p>
+                <p className="text-xs lg:text-sm text-gray-500">{user?.email}</p>
               </div>
               <div className="w-8 h-8 lg:w-10 lg:h-10 bg-green-600 rounded-full flex items-center justify-center">
                 <span className="text-white font-bold text-sm lg:text-lg">
@@ -1240,7 +1286,7 @@ const JudgeDashboardPage: React.FC = () => {
         </header>
 
         {/* Page Content */}
-        <main className="p-6">
+        <main className="p-4 lg:p-6">
               {activeTab === 'dashboard' && renderDashboard()}
           {activeTab === 'applications' && (
             currentView === 'list' ? renderApplications() : 
