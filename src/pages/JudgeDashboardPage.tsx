@@ -15,6 +15,7 @@ import {
   Clock
 } from 'lucide-react';
 import { useUser } from '../App';
+import { applicationsAPI } from '../services/api';
 
 interface Application {
   id: string;
@@ -50,8 +51,10 @@ const JudgeDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { userData: user, logout } = useUser();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'applications' | 'settings'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'applications' | 'reviewed' | 'settings'>('dashboard');
+  const [activeCategory, setActiveCategory] = useState<string>('Fashion');
   const [applications, setApplications] = useState<Application[]>([]);
+  const [reviewedApplications, setReviewedApplications] = useState<Application[]>([]);
   const [stats, setStats] = useState<JudgeStats>({
     total_applications: 0,
     reviewed_applications: 0,
@@ -60,6 +63,7 @@ const JudgeDashboardPage: React.FC = () => {
     completion_rate: 0,
     available_capacity: 0
   });
+  const [lockedApplications, setLockedApplications] = useState<Set<string>>(new Set());
   const [conflicts, setConflicts] = useState<ConflictDeclaration[]>([]);
   const [showConflictForm, setShowConflictForm] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
@@ -75,6 +79,95 @@ const JudgeDashboardPage: React.FC = () => {
   });
   const [comments, setComments] = useState('');
   const [reviewNotes, setReviewNotes] = useState('');
+
+  // Available application categories/sectors
+  const categories = [
+    'Fashion',
+    'Information Technology (IT)',
+    'Agribusiness', 
+    'Food & Beverage',
+    'Light Manufacturing',
+    'Creative Enterprise'
+  ];
+
+  // Helper functions for filtering and statistics
+  const getFilteredApplications = (category: string, isReviewed: boolean = false) => {
+    const sourceApplications = isReviewed ? reviewedApplications : applications;
+    return sourceApplications.filter(app => app.sector === category);
+  };
+
+  const getCategoryStats = (category: string) => {
+    const totalApps = applications.filter(app => app.sector === category).length;
+    const reviewedApps = reviewedApplications.filter(app => app.sector === category).length;
+    const lockedApps = applications.filter(app => app.sector === category && lockedApplications.has(app.id)).length;
+    
+    return { total: totalApps, reviewed: reviewedApps, locked: lockedApps, pending: totalApps - reviewedApps - lockedApps };
+  };
+
+  // Application locking functions
+  const lockApplication = async (applicationId: string): Promise<boolean> => {
+    try {
+      const response = await applicationsAPI.lock(applicationId);
+      
+      if (response.success && response.data?.locked) {
+        // Successfully locked - add to local state
+        setLockedApplications(prev => new Set([...prev, applicationId]));
+        return true;
+      } else {
+        // Lock failed - application might already be locked
+        console.warn('Failed to lock application:', response.message);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('Failed to lock application:', error);
+      
+      // Handle specific API errors
+      if (error.status === 409) {
+        // Conflict - application already locked
+        return false;
+      } else if (error.status === 403) {
+        // Forbidden - judge not authorized for this application
+        alert('You are not authorized to review this application.');
+        return false;
+      }
+      
+      // For API connection issues, fall back to mock behavior for now
+      const isAlreadyLocked = lockedApplications.has(applicationId);
+      if (isAlreadyLocked) {
+        return false;
+      }
+      
+      // Mock success as fallback
+      setLockedApplications(prev => new Set([...prev, applicationId]));
+      return true;
+    }
+  };
+
+  const unlockApplication = async (applicationId: string): Promise<void> => {
+    try {
+      const response = await applicationsAPI.unlock(applicationId);
+      
+      if (response.success) {
+        // Successfully unlocked - remove from local state
+        setLockedApplications(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(applicationId);
+          return newSet;
+        });
+      } else {
+        console.warn('Failed to unlock application:', response.message);
+      }
+    } catch (error) {
+      console.error('Failed to unlock application:', error);
+      
+      // Fall back to mock behavior for API connection issues
+      setLockedApplications(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(applicationId);
+        return newSet;
+      });
+    }
+  };
 
   useEffect(() => {
     // Check if user is authenticated and is a judge
@@ -104,27 +197,143 @@ const JudgeDashboardPage: React.FC = () => {
         available_capacity: 15
       });
       
+      // Mock pending applications (not yet reviewed)
       setApplications([
-          {
-            id: '1',
-            business_name: 'Tech Solutions Ltd',
-            category: 'Information Technology (IT)',
+        {
+          id: '1',
+          business_name: 'Tech Solutions Ltd',
+          category: 'Information Technology (IT)',
           sector: 'Information Technology (IT)',
-            msme_strata: 'Small Enterprise',
-          status: 'under_review',
-          created_at: '2025-08-25',
-          score: 8.5,
-          reviewed_by: 'Judge 1',
-          review_date: '2025-08-26'
-          },
-          {
-            id: '2',
-            business_name: 'Green Energy Co',
-            category: 'Renewable Energy',
-          sector: 'Renewable Energy',
-            msme_strata: 'Medium Enterprise',
+          msme_strata: 'Small Enterprise',
           status: 'pending_review',
-          created_at: '2025-08-24'
+          created_at: '2024-01-15'
+        },
+        {
+          id: '2',
+          business_name: 'Fashion Forward Studio',
+          category: 'Fashion',
+          sector: 'Fashion',
+          msme_strata: 'Micro Enterprise',
+          status: 'pending_review',
+          created_at: '2024-01-14'
+        },
+        {
+          id: '3',
+          business_name: 'Urban Farms Initiative',
+          category: 'Agribusiness',
+          sector: 'Agribusiness',
+          msme_strata: 'Small Enterprise',
+          status: 'pending_review',
+          created_at: '2024-01-13'
+        },
+        {
+          id: '4',
+          business_name: 'Gourmet Foods Plus',
+          category: 'Food & Beverage',
+          sector: 'Food & Beverage',
+          msme_strata: 'Medium Enterprise',
+          status: 'pending_review',
+          created_at: '2024-01-12'
+        },
+        {
+          id: '5',
+          business_name: 'Precision Manufacturing Co',
+          category: 'Light Manufacturing',
+          sector: 'Light Manufacturing',
+          msme_strata: 'Small Enterprise',
+          status: 'pending_review',
+          created_at: '2024-01-11'
+        },
+        {
+          id: '6',
+          business_name: 'Creative Media Hub',
+          category: 'Creative Enterprise',
+          sector: 'Creative Enterprise',
+          msme_strata: 'Micro Enterprise',
+          status: 'pending_review',
+          created_at: '2024-01-10'
+        },
+        {
+          id: '7',
+          business_name: 'Smart Tech Innovations',
+          category: 'Information Technology (IT)',
+          sector: 'Information Technology (IT)',
+          msme_strata: 'Medium Enterprise',
+          status: 'pending_review',
+          created_at: '2024-01-09'
+        },
+        {
+          id: '8',
+          business_name: 'Sustainable Fashion Co',
+          category: 'Fashion',
+          sector: 'Fashion',
+          msme_strata: 'Small Enterprise',
+          status: 'pending_review',
+          created_at: '2024-01-08'
+        }
+      ]);
+
+      // Mock reviewed applications (completed reviews)
+      setReviewedApplications([
+        {
+          id: 'r1',
+          business_name: 'Digital Agency Pro',
+          category: 'Information Technology (IT)',
+          sector: 'Information Technology (IT)',
+          msme_strata: 'Small Enterprise',
+          status: 'completed',
+          created_at: '2024-01-01',
+          score: 85,
+          reviewed_by: user?.fullName || 'Current Judge',
+          review_date: '2024-01-20'
+        },
+        {
+          id: 'r2',
+          business_name: 'Artisan Clothing Co',
+          category: 'Fashion',
+          sector: 'Fashion',
+          msme_strata: 'Micro Enterprise',
+          status: 'completed',
+          created_at: '2024-01-02',
+          score: 78,
+          reviewed_by: user?.fullName || 'Current Judge',
+          review_date: '2024-01-19'
+        },
+        {
+          id: 'r3',
+          business_name: 'Organic Vegetables Farm',
+          category: 'Agribusiness',
+          sector: 'Agribusiness',
+          msme_strata: 'Small Enterprise',
+          status: 'completed',
+          created_at: '2024-01-03',
+          score: 92,
+          reviewed_by: user?.fullName || 'Current Judge',
+          review_date: '2024-01-18'
+        },
+        {
+          id: 'r4',
+          business_name: 'Healthy Snacks Ltd',
+          category: 'Food & Beverage',
+          sector: 'Food & Beverage',
+          msme_strata: 'Medium Enterprise',
+          status: 'completed',
+          created_at: '2024-01-04',
+          score: 81,
+          reviewed_by: user?.fullName || 'Current Judge',
+          review_date: '2024-01-17'
+        },
+        {
+          id: 'r5',
+          business_name: 'Custom Parts Manufacturing',
+          category: 'Light Manufacturing',
+          sector: 'Light Manufacturing',
+          msme_strata: 'Small Enterprise',
+          status: 'completed',
+          created_at: '2024-01-05',
+          score: 76,
+          reviewed_by: user?.fullName || 'Current Judge',
+          review_date: '2024-01-16'
         }
       ]);
 
@@ -375,89 +584,248 @@ const JudgeDashboardPage: React.FC = () => {
     </div>
   );
 
-  const renderApplications = () => (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Applications</h2>
-          <p className="text-gray-600">Review and score applications</p>
-        </div>
-        <div className="flex items-center space-x-3 mt-4 sm:mt-0">
-          <div className="relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search applications..."
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          />
-        </div>
-          <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-            <Filter className="w-5 h-5 text-gray-600" />
-          </button>
-        </div>
-      </div>
-
-      {/* Applications List */}
-      <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Business</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {applications.map((app) => (
-                <tr key={app.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div>
-                      <div className="text-sm font-medium text-gray-900">{app.business_name}</div>
-                      <div className="text-sm text-gray-500">{app.msme_strata}</div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{app.category}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      app.status === 'under_review' ? 'bg-blue-100 text-blue-800' :
-                      app.status === 'pending_review' ? 'bg-orange-100 text-orange-800' :
-                      'bg-gray-100 text-gray-800'
+  // Category Tabs Component
+  const renderCategoryTabs = (isReviewed: boolean = false) => (
+    <div className="bg-white rounded-xl shadow-md border border-gray-100 mb-6">
+      <div className="border-b border-gray-200">
+        <nav className="flex px-6" aria-label="Tabs">
+          {categories.map((category) => {
+            const stats = getCategoryStats(category);
+            const isActive = activeCategory === category;
+            
+            return (
+              <button
+                key={category}
+                onClick={() => setActiveCategory(category)}
+                className={`flex-1 py-4 px-1 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                  isActive
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex flex-col items-center space-y-1">
+                  <span className="capitalize">
+                    {category}
+                  </span>
+                  <div className="flex space-x-2 text-xs">
+                    <span className={`px-2 py-1 rounded-full ${
+                      isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
                     }`}>
-                      {app.status.replace('_', ' ')}
+                      {isReviewed ? stats.reviewed : stats.pending} {isReviewed ? 'reviewed' : 'pending'}
                     </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {app.score ? (
-                      <div className="flex items-center space-x-1">
-                        <Star className="w-4 h-4 text-yellow-500 fill-current" />
-                        <span className="text-sm font-medium">{app.score}</span>
-                      </div>
-                    ) : (
-                      <span className="text-sm text-gray-500">Not scored</span>
+                    {!isReviewed && stats.locked > 0 && (
+                      <span className="px-2 py-1 rounded-full bg-orange-100 text-orange-700">
+                        {stats.locked} locked
+                      </span>
                     )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    <button 
-                      onClick={() => handleViewApplication(app)}
-                      className="text-green-600 hover:text-green-900 mr-3 hover:underline"
-                    >
-                      View Details
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </nav>
       </div>
     </div>
   );
+
+  const renderApplications = () => {
+    const filteredApplications = getFilteredApplications(activeCategory, false);
+    
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Applications</h2>
+            <p className="text-gray-600">Review and score applications assigned to you</p>
+          </div>
+          <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+            <div className="relative">
+              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search applications..."
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <Filter className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        {renderCategoryTabs(false)}
+
+        {/* Applications List */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredApplications.length > 0 ? (
+                  filteredApplications.map((app) => {
+                    const isLocked = lockedApplications.has(app.id);
+                    const canReview = !isLocked && app.status !== 'completed';
+                    
+                    return (
+                      <tr key={app.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{app.category}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center space-x-2">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              app.status === 'under_review' ? 'bg-blue-100 text-blue-800' :
+                              app.status === 'pending_review' ? 'bg-orange-100 text-orange-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {app.status.replace('_', ' ')}
+                            </span>
+                            {isLocked && (
+                              <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                                🔒 Locked
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {app.score ? (
+                            <div className="flex items-center space-x-1">
+                              <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                              <span className="text-sm font-medium">{app.score}</span>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-gray-500">Not scored</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button 
+                            onClick={() => handleViewApplication(app)}
+                            className="text-green-600 hover:text-green-900 hover:underline"
+                          >
+                            View Details
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                      No applications found in {activeCategory} category.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderReviewedApplications = () => {
+    const filteredReviewedApplications = getFilteredApplications(activeCategory, true);
+    
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">Reviewed Applications</h2>
+            <p className="text-gray-600">Applications you have completed reviewing and scored</p>
+          </div>
+          <div className="flex items-center space-x-3 mt-4 sm:mt-0">
+            <div className="relative">
+              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search reviewed applications..."
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+            <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+              <Filter className="w-5 h-5 text-gray-600" />
+            </button>
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        {renderCategoryTabs(true)}
+
+        {/* Reviewed Applications List */}
+        <div className="bg-white rounded-xl shadow-md border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Score</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Review Date</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredReviewedApplications.length > 0 ? (
+                  filteredReviewedApplications.map((app) => (
+                    <tr key={app.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">{app.category}</div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-1">
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" />
+                          <span className="text-sm font-medium">{app.score || 'N/A'}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {app.review_date ? new Date(app.review_date).toLocaleDateString() : 'N/A'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button 
+                            onClick={() => handleViewApplication(app)}
+                            className="text-green-600 hover:text-green-900 hover:underline"
+                          >
+                            View Review
+                          </button>
+                          <button 
+                            onClick={() => {
+                              setSelectedApplication(app);
+                              setCurrentView('review');
+                            }}
+                            className="text-blue-600 hover:text-blue-900 hover:underline"
+                          >
+                            Edit Review
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+                      No reviewed applications found in {activeCategory} category.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderSettings = () => (
     <div className="space-y-6">
@@ -1180,7 +1548,7 @@ const JudgeDashboardPage: React.FC = () => {
 
         {/* Navigation Section */}
         <div className="px-6 py-4">
-          <nav className="space-y-2">
+          <nav className="space-y-4">
             <button
               onClick={() => {
                 setActiveTab('dashboard');
@@ -1209,6 +1577,21 @@ const JudgeDashboardPage: React.FC = () => {
             >
               <FileText className="w-5 h-5" />
               <span className="font-medium">Applications</span>
+            </button>
+            
+            <button
+              onClick={() => {
+                setActiveTab('reviewed');
+                setSidebarOpen(false);
+              }}
+              className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-all duration-200 ${
+                activeTab === 'reviewed' 
+                  ? 'bg-green-700 text-white shadow-lg transform scale-[1.02]' 
+                  : 'text-green-100 hover:bg-green-700 hover:text-white'
+              }`}
+            >
+              <Eye className="w-5 h-5" />
+              <span className="font-medium">Reviewed</span>
             </button>
             
             <button
@@ -1263,7 +1646,8 @@ const JudgeDashboardPage: React.FC = () => {
               <div>
                 <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
                   {activeTab === 'dashboard' ? 'Dashboard' : 
-                   activeTab === 'applications' ? 'Applications' : 'Settings'}
+                   activeTab === 'applications' ? 'Applications' : 
+                   activeTab === 'reviewed' ? 'Reviewed Applications' : 'Settings'}
                 </h1>
                 {activeTab === 'dashboard' && (
                   <p className="text-sm lg:text-base text-gray-600">Welcome back, {user?.fullName}</p>
@@ -1292,6 +1676,11 @@ const JudgeDashboardPage: React.FC = () => {
             currentView === 'list' ? renderApplications() : 
             currentView === 'review' ? renderApplicationReview() :
             currentView === 'scoring' ? renderScoringInterface() : renderApplications()
+          )}
+          {activeTab === 'reviewed' && (
+            currentView === 'list' ? renderReviewedApplications() : 
+            currentView === 'review' ? renderApplicationReview() :
+            currentView === 'scoring' ? renderScoringInterface() : renderReviewedApplications()
           )}
           {activeTab === 'settings' && renderSettings()}
         </main>

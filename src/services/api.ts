@@ -12,7 +12,43 @@ export interface User {
   phone: string;
   role: 'applicant' | 'judge' | 'admin' | 'sponsor' | 'public';
   is_verified: boolean;
+  is_active?: boolean;
+  last_login?: string;
   created_at: string;
+}
+
+// Judge-specific interfaces
+export interface JudgeProfile {
+  id: string;
+  expertise_sectors: string[];
+  is_active: boolean;
+  approval_status: 'pending' | 'approved' | 'rejected';
+  assigned_applications_count: number;
+  max_applications_per_judge: number;
+  available_capacity: number;
+  total_scores_submitted: number;
+  average_score_given: number;
+  completion_rate: number;
+}
+
+export interface UpcomingDeadline {
+  application_id: string;
+  due_date: string;
+  days_remaining: number;
+}
+
+export interface DashboardSummary {
+  pending_reviews: number;
+  completed_today: number;
+  upcoming_deadlines: UpcomingDeadline[];
+}
+
+export interface JudgeLoginResponse {
+  user: User;
+  judge_profile: JudgeProfile;
+  token: string;
+  permissions: string[];
+  dashboard_summary: DashboardSummary;
 }
 
 // New PRD Categories
@@ -178,6 +214,20 @@ interface ApiResponse<T> {
   details?: any[];
 }
 
+// Error response interfaces
+export interface JudgeLoginErrorData {
+  approval_status?: 'pending' | 'approved' | 'rejected';
+  estimated_approval_time?: string;
+  contact_support?: string;
+}
+
+export interface JudgeLoginError {
+  success: false;
+  error: string;
+  message: string;
+  data?: JudgeLoginErrorData;
+}
+
 // Extended API Response for login
 interface LoginApiResponse extends ApiResponse<{ token: string; user: User }> {
   token?: string;
@@ -326,6 +376,25 @@ export const authAPI = {
     return apiCall('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  // Judge login
+  judgeLogin: async (credentials: {
+    email: string;
+    password: string;
+  }): Promise<LoginApiResponse> => {
+    console.log('🏛️ Judge Login API Call - Credentials:', { email: credentials.email });
+    
+    // Use the regular login endpoint but with email_or_phone format
+    const loginData = {
+      email_or_phone: credentials.email,
+      password: credentials.password
+    };
+    
+    return apiCall('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(loginData),
     });
   },
 };
@@ -534,6 +603,88 @@ export const applicationsAPI = {
   }>> => {
     return apiCall(`/applications/${id}/validation`);
   },
+
+  // Application locking for concurrent review prevention
+  lock: async (id: string): Promise<ApiResponse<{
+    locked: boolean;
+    locked_by: string;
+    locked_at: string;
+    expires_at: string;
+  }>> => {
+    return apiCall(`/applications/${id}/lock`, {
+      method: 'POST',
+    });
+  },
+
+  unlock: async (id: string): Promise<ApiResponse<{
+    unlocked: boolean;
+    unlocked_at: string;
+  }>> => {
+    return apiCall(`/applications/${id}/unlock`, {
+      method: 'POST',
+    });
+  },
+
+  // Check if application is locked
+  getLockStatus: async (id: string): Promise<ApiResponse<{
+    is_locked: boolean;
+    locked_by?: string;
+    locked_at?: string;
+    expires_at?: string;
+  }>> => {
+    return apiCall(`/applications/${id}/lock-status`);
+  },
+
+  // Judge-specific endpoints
+  getAssigned: async (params?: {
+    page?: number;
+    limit?: number;
+    sector?: string;
+    status?: string;
+  }): Promise<ApiResponse<{
+    applications: Application[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  }>> => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.sector) queryParams.append('sector', params.sector);
+    if (params?.status) queryParams.append('status', params.status);
+    
+    return apiCall(`/judge/applications?${queryParams.toString()}`);
+  },
+
+  // Submit application review and scores
+  submitReview: async (
+    id: string,
+    reviewData: {
+      scores: {
+        innovation: number;
+        marketTraction: number;
+        impact: number;
+        financialHealth: number;
+        inclusion: number;
+        scalability: number;
+      };
+      comments: string;
+      reviewNotes: string;
+      totalScore: number;
+    }
+  ): Promise<ApiResponse<{
+    review_id: string;
+    total_score: number;
+    submitted_at: string;
+  }>> => {
+    return apiCall(`/judge/applications/${id}/review`, {
+      method: 'POST',
+      body: JSON.stringify(reviewData),
+    });
+  },
 };
 
 // Documents API
@@ -694,6 +845,122 @@ export const healthAPI = {
   },
 };
 
+// Judge utility functions
+export const judgeUtils = {
+  // Get judge user data from localStorage
+  getJudgeData: (): User | null => {
+    try {
+      const judgeData = localStorage.getItem('judgeData');
+      return judgeData ? JSON.parse(judgeData) : null;
+    } catch (error) {
+      console.error('Error getting judge data:', error);
+      return null;
+    }
+  },
+
+  // Get judge profile from localStorage (fallback to mock data if not available)
+  getJudgeProfile: (): JudgeProfile | null => {
+    try {
+      const profile = localStorage.getItem('judgeProfile');
+      if (profile) {
+        return JSON.parse(profile);
+      }
+      
+      // Return mock profile data if not available
+      const judgeData = judgeUtils.getJudgeData();
+      if (judgeData && judgeData.role === 'judge') {
+        return {
+          id: judgeData.id,
+          expertise_sectors: ['fashion', 'it', 'agribusiness'], // Default sectors
+          is_active: true,
+          approval_status: 'approved',
+          assigned_applications_count: 0,
+          max_applications_per_judge: 15,
+          available_capacity: 15,
+          total_scores_submitted: 0,
+          average_score_given: 0,
+          completion_rate: 0
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting judge profile:', error);
+      return null;
+    }
+  },
+
+  // Get judge permissions from localStorage (fallback to default permissions)
+  getJudgePermissions: (): string[] => {
+    try {
+      const permissions = localStorage.getItem('judgePermissions');
+      if (permissions) {
+        return JSON.parse(permissions);
+      }
+      
+      // Return default judge permissions if not available
+      if (judgeUtils.isJudge()) {
+        return [
+          'view_assignments',
+          'submit_scores',
+          'declare_conflicts',
+          'view_performance_metrics',
+          'update_profile'
+        ];
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Error getting judge permissions:', error);
+      return [];
+    }
+  },
+
+  // Get judge dashboard summary from localStorage (fallback to mock data)
+  getJudgeDashboardSummary: (): DashboardSummary | null => {
+    try {
+      const summary = localStorage.getItem('judgeDashboardSummary');
+      if (summary) {
+        return JSON.parse(summary);
+      }
+      
+      // Return mock dashboard summary if not available
+      if (judgeUtils.isJudge()) {
+        return {
+          pending_reviews: 0,
+          completed_today: 0,
+          upcoming_deadlines: []
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting judge dashboard summary:', error);
+      return null;
+    }
+  },
+
+  // Check if current user is a judge
+  isJudge: (): boolean => {
+    return localStorage.getItem('userRole') === 'judge';
+  },
+
+  // Check if judge has specific permission
+  hasPermission: (permission: string): boolean => {
+    const permissions = judgeUtils.getJudgePermissions();
+    return permissions.includes(permission);
+  },
+
+  // Clear all judge data from localStorage
+  clearJudgeData: (): void => {
+    localStorage.removeItem('judgeProfile');
+    localStorage.removeItem('judgePermissions');
+    localStorage.removeItem('judgeDashboardSummary');
+    localStorage.removeItem('judgeData');
+    localStorage.removeItem('userRole');
+  }
+};
+
 export default {
   auth: authAPI,
   user: userAPI,
@@ -704,4 +971,5 @@ export default {
   dashboard: dashboardAPI,
   notifications: notificationsAPI,
   health: healthAPI,
+  judge: judgeUtils,
 };

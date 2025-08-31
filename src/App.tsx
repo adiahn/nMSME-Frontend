@@ -19,6 +19,7 @@ interface UserData {
   email: string;
   phone: string;
   isAuthenticated: boolean;
+  role?: 'applicant' | 'judge' | 'admin' | 'sponsor' | 'public';
 }
 
 interface UserContextType {
@@ -70,6 +71,12 @@ const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     });
     localStorage.removeItem('userData');
     localStorage.removeItem('token');
+    // Clear judge-specific data
+    localStorage.removeItem('judgeProfile');
+    localStorage.removeItem('judgePermissions');
+    localStorage.removeItem('judgeDashboardSummary');
+    localStorage.removeItem('judgeData');
+    localStorage.removeItem('userRole');
   };
 
   return (
